@@ -289,7 +289,7 @@ export const LEVELS = [
 ];
 
 export const DEFAULT_CONFIG = {
-  monthlyPrizeName: 'CENA COMPLETA PARA 4 PERSONAS + DELANTAL DE ORO + 1 AÑO DE PIZZAS GRATIS',
+  monthlyPrizeName: 'CENA COMPLETA PARA 4 PERSONAS ',
   monthlyPrizeDescription: 'El mejor pizzero del mes ganará una cena gourmet para 4 personas en Manolo\'s Pizzas, el delantal oficial bordado y 1 pizza grande gratis por mes durante un año.',
   maxAttemptsPerPlayer: 3,
   gameActive: true,
