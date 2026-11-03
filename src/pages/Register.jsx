@@ -4,11 +4,16 @@ import { User, CreditCard, Sparkles, AlertCircle, ArrowRight, ArrowLeft } from '
 import Chef from '../components/Chef.jsx';
 import { sound } from '../utils/audio.js';
 import { getParticipant, registerOrUpdateParticipant } from '../services/playerService.js';
+import { maskDni } from '../utils/gameConfig.js';
 
 export default function Register({
   onParticipantReady,
   onBackToHome,
   maxAttempts = 3,
+  unlimitedAttempts = false,
+  competitionEnabled = true,
+  startDate = null,
+  endDate = null,
   gameActive = true
 }) {
   const [fullName, setFullName] = useState('');
@@ -16,6 +21,18 @@ export default function Register({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [welcomePlayer, setWelcomePlayer] = useState(null);
+
+  const isBeforeStart = () => {
+    if (!startDate) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return today < startDate;
+  };
+
+  const isAfterEnd = () => {
+    if (!endDate) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return today > endDate;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,8 +53,20 @@ export default function Register({
       return;
     }
 
-    if (!gameActive) {
-      setErrorMsg('El juego se encuentra temporalmente en pausa por la administración. Por favor intentá más tarde.');
+    if (!competitionEnabled || !gameActive) {
+      setErrorMsg('El campeonato se encuentra actualmente en pausa por la administración. Por favor intentá más tarde.');
+      sound.playError();
+      return;
+    }
+
+    if (isBeforeStart()) {
+      setErrorMsg(`El campeonato comenzará oficialmente el ${startDate}. Las inscripciones se abrirán en dicha fecha.`);
+      sound.playError();
+      return;
+    }
+
+    if (isAfterEnd()) {
+      setErrorMsg(`El campeonato ha finalizado oficialmente el ${endDate}. No se admiten nuevas partidas.`);
       sound.playError();
       return;
     }
@@ -45,8 +74,15 @@ export default function Register({
     setIsLoading(true);
     try {
       const existing = await getParticipant(cleanDni);
-      if (existing && existing.totalAttempts >= maxAttempts) {
-        setErrorMsg(`Has alcanzado el límite de ${maxAttempts} intentos permitidos para este torneo mensual.`);
+      if (existing?.blocked) {
+        setErrorMsg('Esta cuenta o DNI se encuentra temporalmente inhabilitada por la administración.');
+        sound.playError();
+        setIsLoading(false);
+        return;
+      }
+
+      if (!unlimitedAttempts && existing && maxAttempts > 0 && existing.totalAttempts >= maxAttempts) {
+        setErrorMsg(`Has alcanzado el límite de ${maxAttempts} intentos permitidos para este campeonato.`);
         sound.playError();
         setIsLoading(false);
         return;
@@ -57,7 +93,7 @@ export default function Register({
       setWelcomePlayer(participant);
     } catch (err) {
       console.error(err);
-      setErrorMsg('Hubo un error al registrar el participante. Intenta nuevamente.');
+      setErrorMsg('Error de conexión con Firebase Firestore. No se pudo verificar la inscripción de forma segura. Por favor revisá tu conexión e intentá nuevamente.');
     } finally {
       setIsLoading(false);
     }
@@ -98,12 +134,12 @@ export default function Register({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#6B6258]">DNI:</span>
-                  <span className="font-mono font-bold text-[#27864B]">{welcomePlayer.dni}</span>
+                  <span className="font-mono font-bold text-[#27864B]">{maskDni(welcomePlayer.dni)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#6B6258]">Intento actual:</span>
                   <span className="font-bold text-[#27864B]">
-                    #{welcomePlayer.totalAttempts} (de {maxAttempts} permitidos)
+                    #{welcomePlayer.totalAttempts} {unlimitedAttempts ? '(Intentos Ilimitados)' : `(de ${maxAttempts} permitidos)`}
                   </span>
                 </div>
               </div>
@@ -130,7 +166,7 @@ export default function Register({
                 <span>Volver al inicio</span>
               </button>
               <span className="text-[11px] font-mono font-bold text-[#27864B] bg-[#DCEFE1] px-2.5 py-0.5 rounded-full border border-[#27864B]/30">
-                Límite: {maxAttempts} intentos/mes
+                {unlimitedAttempts ? '✨ Intentos Ilimitados' : `Límite: ${maxAttempts} intentos`}
               </span>
             </div>
 

@@ -113,8 +113,12 @@ export default function App() {
           <Register
             onParticipantReady={handleParticipantReady}
             onBackToHome={() => setCurrentView('home')}
-            maxAttempts={config?.maxAttemptsPerPlayer || 3}
-            gameActive={config?.gameActive !== false}
+            maxAttempts={Number(config?.maxAttempts ?? config?.maxAttemptsPerPlayer) || 3}
+            unlimitedAttempts={Boolean(config?.unlimitedAttempts)}
+            competitionEnabled={config?.competitionEnabled !== false && config?.status !== 'pausado'}
+            startDate={config?.startDate}
+            endDate={config?.endDate}
+            gameActive={config?.competitionEnabled !== false && config?.status !== 'pausado'}
           />
         )}
 

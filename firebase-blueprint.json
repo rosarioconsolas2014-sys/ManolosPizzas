@@ -31,6 +31,10 @@
         "totalAttempts": {
           "type": "number",
           "description": "Cantidad de partidas realizadas"
+        },
+        "blocked": {
+          "type": "boolean",
+          "description": "Indica si el participante está temporalmente bloqueado"
         }
       },
       "required": ["nombre", "dni", "fechaRegistro"]
@@ -68,7 +72,7 @@
         },
         "nivel3": {
           "type": "number",
-          "description": "Puntaje obtenido en Nivel 3"
+          "description": "Puntaje obtenido en Nivel 3 (Memoria)"
         },
         "puntajeTotal": {
           "type": "number",
@@ -130,29 +134,26 @@
     },
     "GameSettings": {
       "title": "GameSettings",
-      "description": "Configuración del torneo mensual y premios",
+      "description": "Configuración centralizada del campeonato en settings/gameConfig (Gorillaz Gym style)",
       "type": "object",
       "properties": {
-        "monthlyPrizeName": {
-          "type": "string",
-          "maxLength": 200
-        },
-        "monthlyPrizeDescription": {
-          "type": "string",
-          "maxLength": 1000
-        },
-        "maxAttemptsPerPlayer": {
-          "type": "number"
-        },
-        "gameActive": {
-          "type": "boolean"
-        },
-        "currentMonth": {
-          "type": "string",
-          "maxLength": 10
-        }
-      },
-      "required": ["monthlyPrizeName", "monthlyPrizeDescription", "maxAttemptsPerPlayer", "gameActive", "currentMonth"]
+        "adminPasscode": { "type": "string", "description": "Passcode de acceso administrativo" },
+        "competitionEnabled": { "type": "boolean", "description": "Habilita o deshabilita el campeonato" },
+        "competitionTitle": { "type": "string", "description": "Nombre oficial del campeonato" },
+        "startDate": { "type": "string", "description": "Fecha de inicio YYYY-MM-DD" },
+        "endDate": { "type": "string", "description": "Fecha de fin YYYY-MM-DD" },
+        "eventDate": { "type": "string", "description": "Fecha de entrega de premios" },
+        "eventTime": { "type": "string", "description": "Hora del evento" },
+        "eventLocation": { "type": "string", "description": "Lugar del evento" },
+        "eventAddress": { "type": "string", "description": "Dirección del establecimiento" },
+        "maxAttempts": { "type": "number", "description": "Cantidad máxima de intentos" },
+        "unlimitedAttempts": { "type": "boolean", "description": "Si es true, ignora maxAttempts" },
+        "prizeTitle": { "type": "string", "description": "Título o nombre del premio" },
+        "prizeSubtitle": { "type": "string", "description": "Descripción corta o bajada promocional del premio" },
+        "prizeImage": { "type": "string", "description": "URL o ruta de la imagen del premio" },
+        "prizeQuantity": { "type": "number", "description": "Cantidad de premios" },
+        "eventDescription": { "type": "string", "description": "Descripción o información adicional del evento" }
+      }
     }
   },
   "firestore": {
@@ -174,11 +175,20 @@
       },
       "description": "Colección de ranking mensual con el mejor puntaje de cada jugador"
     },
+    "/settings/{settingId}": {
+      "schema": {
+        "$ref": "#/entities/GameSettings"
+      },
+      "description": "Configuración de evento, campeonato y premios en Firestore"
+    },
+    "/competitionsHistory/{historyId}": {
+      "description": "Historial de ediciones anteriores y podios archivados"
+    },
     "/config/settings": {
       "schema": {
         "$ref": "#/entities/GameSettings"
       },
-      "description": "Configuración de juego y premio del mes"
+      "description": "Configuración de juego y premio del mes (legacy)"
     }
   }
 }

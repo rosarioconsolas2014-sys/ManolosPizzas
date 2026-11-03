@@ -57,19 +57,18 @@ service cloud.firestore {
     }
 
     function isValidSettings(data) {
-      return data.monthlyPrizeName is string && data.monthlyPrizeName.size() <= 200 &&
-        data.monthlyPrizeDescription is string && data.monthlyPrizeDescription.size() <= 1000 &&
-        data.maxAttemptsPerPlayer is number && data.maxAttemptsPerPlayer >= 1 &&
-        data.gameActive is bool &&
-        data.currentMonth is string && data.currentMonth.size() <= 10;
+      return (data.competitionTitle is string || data.eventName is string) ||
+        (data.maxAttempts is number || data.maxAttemptsPerPlayer is number || data.unlimitedAttempts is bool);
     }
 
     // Colección: players (Participantes)
     match /players/{playerId} {
       allow read: if true;
       allow create: if isValidId(playerId) && isValidPlayer(incoming());
-      allow update: if isValidId(playerId) && isValidPlayer(incoming()) &&
-        (isAdmin() || incoming().diff(existing()).affectedKeys().hasOnly(['totalAttempts', 'intentos', 'lastAttemptAt', 'nombre', 'fullName']));
+      allow update: if isValidId(playerId) && (
+        isAdmin() ||
+        (isValidPlayer(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['totalAttempts', 'intentos', 'lastAttemptAt', 'nombre', 'fullName']))
+      );
       allow delete: if isAdmin();
     }
 
@@ -77,7 +76,6 @@ service cloud.firestore {
     match /gameResults/{resultId} {
       allow read: if true;
       allow create: if isValidId(resultId) && isValidGameResult(incoming());
-      // Los participantes no pueden modificar ni falsear partidas anteriores
       allow update, delete: if isAdmin();
     }
 
@@ -90,10 +88,24 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Configuración global del torneo y premios
+    // Configuración global del torneo y premios (Colección 'settings')
+    match /settings/{settingId} {
+      allow read: if true;
+      allow create, update: if isAdmin() || isValidSettings(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Historial de campeonatos anteriores archivados
+    match /competitionsHistory/{historyId} {
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Configuración heredada 'config'
     match /config/{configId} {
       allow read: if true;
-      allow create, update: if isAdmin() && isValidSettings(incoming());
+      allow create, update: if isAdmin();
       allow delete: if isAdmin();
     }
 

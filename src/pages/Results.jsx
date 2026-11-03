@@ -5,6 +5,7 @@ import { Trophy, Sparkles, RotateCcw, CheckCircle2 } from 'lucide-react';
 import Chef from '../components/Chef.jsx';
 import { sound } from '../utils/audio.js';
 import { saveGameResult } from '../services/scoreService.js';
+import { maskDni } from '../utils/gameConfig.js';
 
 export default function Results({
   player,
@@ -111,7 +112,7 @@ export default function Results({
             ¡FELICITACIONES, MAESTRO PIZZERO!
           </h1>
           <p className="text-xs sm:text-sm text-[#6B6258] font-medium">
-            Chef <span className="text-[#27864B] font-bold">{player?.fullName}</span> (DNI: {player?.dni})
+            Chef <span className="text-[#27864B] font-bold">{player?.fullName}</span> (DNI: {maskDni(player?.dni)})
           </p>
         </div>
 

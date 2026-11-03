@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, Search, Calendar, Star } from 'lucide-react';
 import { sound } from '../utils/audio.js';
+import { maskDni } from '../utils/gameConfig.js';
 
 export default function RankingTable({
   monthlyResults = [],
@@ -89,7 +90,7 @@ export default function RankingTable({
                 {top3[1].fullName}
               </div>
               <div className="text-xs font-mono text-[#6B6258]">
-                DNI: {top3[1].dni}
+                DNI: {maskDni(top3[1].dni)}
               </div>
               <div className="mt-3 px-3.5 py-1 bg-[#FFFDF5] rounded-xl border border-slate-200">
                 <span className="text-xl font-black font-mono text-[#27864B]">
@@ -122,7 +123,7 @@ export default function RankingTable({
                 {top3[0].fullName}
               </div>
               <div className="text-xs font-mono text-[#6B6258]">
-                DNI: {top3[0].dni}
+                DNI: {maskDni(top3[0].dni)}
               </div>
               <div className="mt-3 px-4 py-1.5 bg-[#F8D978] text-[#5C3818] rounded-2xl shadow-xs border border-[#D97706]/40">
                 <span className="text-2xl font-black font-mono">
@@ -149,7 +150,7 @@ export default function RankingTable({
                 {top3[2].fullName}
               </div>
               <div className="text-xs font-mono text-[#6B6258]">
-                DNI: {top3[2].dni}
+                DNI: {maskDni(top3[2].dni)}
               </div>
               <div className="mt-3 px-3.5 py-1 bg-[#FFFDF5] rounded-xl border border-[#D4A373]/50">
                 <span className="text-xl font-black font-mono text-[#27864B]">
@@ -229,7 +230,7 @@ export default function RankingTable({
                         )}
                       </div>
                       <div className="text-[11px] font-mono text-[#6B6258] flex items-center gap-2">
-                        <span>DNI: {entry.dni}</span>
+                        <span>DNI: {maskDni(entry.dni)}</span>
                         {entry.createdAt && (
                           <span className="hidden sm:inline">
                             • {new Date(entry.createdAt).toLocaleDateString()}

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Play, HelpCircle, Award, Star, X } from 'lucide-react';
+import { Trophy, Play, HelpCircle, Award, Star, X, MapPin, Calendar, Clock, AlertTriangle, Sparkles } from 'lucide-react';
 import Chef from '../components/Chef.jsx';
 import { sound } from '../utils/audio.js';
 import { formatMonthName } from '../utils/gameConfig.js';
@@ -13,16 +13,116 @@ export default function Home({
   topScore = 0
 }) {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [timeLeftStr, setTimeLeftStr] = useState({ days: 0, hours: 0, mins: 0, secs: 0, isPast: false, mode: 'end' });
+
+  // Calculate live countdown to championship startDate or endDate
+  useEffect(() => {
+    const calculateCountdown = () => {
+      const now = new Date().getTime();
+      const startStr = config?.startDate ? `${config.startDate}T${config.startTime || '00:00:00'}` : null;
+      const endStr = config?.endDate ? `${config.endDate}T${config.endTime || '23:59:59'}` : null;
+
+      const startTime = startStr ? new Date(startStr).getTime() : 0;
+      const endTime = endStr ? new Date(endStr).getTime() : 0;
+
+      // If before start
+      if (startTime && now < startTime) {
+        const diff = startTime - now;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((diff / (1000 * 60)) % 60);
+        const secs = Math.floor((diff / 1000) % 60);
+        setTimeLeftStr({ days, hours, mins, secs, isPast: false, mode: 'start' });
+        return;
+      }
+
+      // If active before end
+      if (endTime) {
+        const diff = endTime - now;
+        if (diff <= 0) {
+          setTimeLeftStr({ days: 0, hours: 0, mins: 0, secs: 0, isPast: true, mode: 'end' });
+          return;
+        }
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((diff / (1000 * 60)) % 60);
+        const secs = Math.floor((diff / 1000) % 60);
+        setTimeLeftStr({ days, hours, mins, secs, isPast: false, mode: 'end' });
+        return;
+      }
+
+      setTimeLeftStr({ days: 0, hours: 0, mins: 0, secs: 0, isPast: false, mode: 'end' });
+    };
+
+    calculateCountdown();
+    const timer = setInterval(calculateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [config?.startDate, config?.startTime, config?.endDate, config?.endTime]);
+
+  const today = new Date().toISOString().split('T')[0];
+  const isBeforeStart = Boolean(config?.startDate && today < config.startDate);
+  const isAfterEnd = Boolean(config?.endDate && today > config.endDate);
+  const isManuallyDisabled = config?.competitionEnabled === false || config?.status === 'pausado';
+
+  let effectiveStatus = 'activo';
+  if (isManuallyDisabled) {
+    effectiveStatus = 'pausado';
+  } else if (isBeforeStart) {
+    effectiveStatus = 'proximo';
+  } else if (isAfterEnd) {
+    effectiveStatus = 'finalizado';
+  }
+
+  const getStatusBadge = () => {
+    switch (effectiveStatus) {
+      case 'proximo':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF3C7] text-[#B45309] border border-[#F59E0B] text-xs font-black uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-ping" />
+            <span>PRÓXIMAMENTE (INICIA {config?.startDate})</span>
+          </span>
+        );
+      case 'pausado':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFEDD5] text-[#C2410C] border border-[#FB923C] text-xs font-black uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-[#EA580C]" />
+            <span>CAMPEONATO EN PAUSA</span>
+          </span>
+        );
+      case 'finalizado':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEE2E2] text-[#B91C1C] border border-[#EF4444] text-xs font-black uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
+            <span>CAMPEONATO FINALIZADO</span>
+          </span>
+        );
+      case 'activo':
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DCEFE1] text-[#27864B] border border-[#27864B] text-xs font-black uppercase tracking-wider shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#27864B] animate-pulse" />
+            <span>COMPETENCIA ACTIVA</span>
+          </span>
+        );
+    }
+  };
+
+  const prizeName = config?.prizeName || config?.monthlyPrizeName || 'CENA COMPLETA PARA 4 PERSONAS';
+  const prizeDesc = config?.prizeDescription || config?.monthlyPrizeDescription || 'Una cena gourmet completa para 4 personas con entradas, pizzas de la casa, bebidas y postre artesanal.';
+  const promoText = config?.promoText || '¡Jugá gratis, acumulá el puntaje más alto del mes y ganá una Super Cena para 4 personas!';
 
   return (
-    <div className="relative min-h-[calc(100vh-68px)] flex flex-col items-center justify-between px-4 py-6 md:py-8 max-w-6xl mx-auto">
+    <div className="relative min-h-[calc(100vh-68px)] flex flex-col items-center justify-between px-3 sm:px-4 py-5 md:py-8 max-w-6xl mx-auto w-full">
       {/* Hero Section */}
       <div className="w-full text-center space-y-3 relative z-10">
-        {/* Italian Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border-2 border-[#27864B] shadow-xs text-[#27864B] text-xs sm:text-sm font-black tracking-wider uppercase">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#27864B]" />
-          <span>¡EL VIDEOJUEGO OFICIAL DE MANOLO'S PIZZAS!</span>
-          <span className="w-2.5 h-2.5 rounded-full bg-[#D93636]" />
+        {/* Status and Italian Badge Header */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {getStatusBadge()}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white border-2 border-[#27864B] text-[#27864B] text-xs font-black tracking-wider uppercase shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#27864B]" />
+            <span>TORNEO OFICIAL MANOLO'S PIZZAS</span>
+            <span className="w-2 h-2 rounded-full bg-[#D93636]" />
+          </div>
         </div>
 
         {/* Main Logo & Title */}
@@ -32,18 +132,37 @@ export default function Home({
             <span className="text-[#27864B]">PIZZAS</span>
           </h1>
           <div className="text-lg sm:text-2xl md:text-3xl font-black tracking-wider text-[#383028] uppercase font-mono">
-            THE PIZZA CHALLENGE
+            {config?.publicTitle || 'THE PIZZA CHALLENGE'}
           </div>
-          <p className="text-xs sm:text-sm md:text-base text-[#6B6258] max-w-xl mx-auto font-medium">
-            ¿Tenés lo necesario para ser el mejor pizzero del mes? Atendé comandas a contrarreloj en 3 niveles y ganá premios reales de nuestra pizzería italiana.
+          <p className="text-xs sm:text-sm md:text-base text-[#6B6258] max-w-2xl mx-auto font-medium">
+            {config?.description || '¿Tenés lo necesario para ser el mejor pizzero del mes? Atendé comandas a contrarreloj en 3 niveles de pura velocidad y memoria gastronómica para ganar premios reales.'}
           </p>
         </div>
+
+        {/* Event Dates & Countdown Banner */}
+        {!timeLeftStr.isPast && (timeLeftStr.days > 0 || timeLeftStr.hours > 0 || timeLeftStr.mins > 0 || timeLeftStr.secs > 0) && (
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-4 px-4 py-2 bg-white rounded-2xl border-2 border-[#EADBCE] shadow-xs text-xs font-bold text-[#383028]">
+            <span className="text-[#6B6258] flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-[#27864B]" />
+              <span>{timeLeftStr.mode === 'start' ? 'INICIO DEL TORNEO EN:' : 'CIERRE DEL TORNEO EN:'}</span>
+            </span>
+            <div className="flex items-center gap-1.5 font-mono font-black text-[#27864B]">
+              <span className="bg-[#DCEFE1] px-2 py-0.5 rounded-lg border border-[#27864B]/30">{timeLeftStr.days}d</span>
+              <span>:</span>
+              <span className="bg-[#DCEFE1] px-2 py-0.5 rounded-lg border border-[#27864B]/30">{String(timeLeftStr.hours).padStart(2, '0')}h</span>
+              <span>:</span>
+              <span className="bg-[#DCEFE1] px-2 py-0.5 rounded-lg border border-[#27864B]/30">{String(timeLeftStr.mins).padStart(2, '0')}m</span>
+              <span>:</span>
+              <span className="bg-[#DCEFE1] px-2 py-0.5 rounded-lg border border-[#27864B]/30">{String(timeLeftStr.secs).padStart(2, '0')}s</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Centerpiece: Chef Manolo + Action Station */}
-      <div className="my-5 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center z-10">
-        {/* Left Column: Monthly Champion Showcase Card */}
-        <div className="lg:col-span-4 order-2 lg:order-1">
+      <div className="my-5 w-full grid grid-cols-1 lg:grid-cols-12 gap-5 items-center z-10">
+        {/* Left Column: Monthly Champion Showcase Card & Prize Highlights */}
+        <div className="lg:col-span-4 order-2 lg:order-1 space-y-4">
           <div className="bg-white rounded-3xl p-5 border-2 border-[#EADBCE] shadow-sm relative overflow-hidden">
             {/* Italian Flag Strip along top */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-[repeating-linear-gradient(90deg,#27864B_0px,#27864B_33.33%,#FFFDF5_33.33%,#FFFDF5_66.66%,#D93636_66.66%,#D93636_100%)]" />
@@ -63,7 +182,9 @@ export default function Home({
                 </div>
               </div>
               <span className="text-xs font-mono font-bold bg-[#DCEFE1] text-[#27864B] px-2 py-0.5 rounded-full border border-[#27864B]/30">
-                {formatMonthName(config?.currentMonth)}
+                {config?.competitionMonth && config?.competitionYear
+                  ? formatMonthName(`${config.competitionYear}-${String(config.competitionMonth).padStart(2, '0')}`)
+                  : formatMonthName(config?.currentMonth)}
               </span>
             </div>
 
@@ -95,45 +216,95 @@ export default function Home({
               </div>
             )}
 
-            {/* Monthly Prize Card */}
-            <div className="mt-4 p-3.5 rounded-2xl bg-[#DCEFE1]/60 border-2 border-[#27864B]/40">
-              <div className="flex items-center gap-2 text-xs font-black text-[#27864B] uppercase tracking-wider mb-1">
+            {/* Featured Prize Box */}
+            <div className="mt-4 p-4 rounded-2xl bg-[#DCEFE1]/70 border-2 border-[#27864B]/40 space-y-1.5 relative overflow-hidden">
+              <div className="flex items-center gap-2 text-xs font-black text-[#27864B] uppercase tracking-wider">
                 <Award className="w-4 h-4 text-[#D97706]" />
-                <span>PREMIO ESPECIAL DEL MES</span>
+                <span>PREMIO DESTACADO</span>
               </div>
-              <div className="text-xs font-black text-[#383028] leading-snug">
-                {config?.monthlyPrizeName || 'CENA COMPLETA PARA 4 + 1 AÑO DE PIZZAS'}
+              <div className="text-sm font-black text-[#383028] leading-tight">
+                {prizeName}
               </div>
-              <div className="text-[11px] text-[#6B6258] mt-1 line-clamp-2 leading-tight">
-                {config?.monthlyPrizeDescription}
-              </div>
+              <p className="text-[11px] text-[#6B6258] leading-snug">
+                {prizeDesc}
+              </p>
+              {config?.prizeQuantity && (
+                <div className="text-[10px] font-mono text-[#27864B] font-bold pt-1">
+                  🎁 Cantidad: {config.prizeQuantity}
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Ceremony Venue & Location Box */}
+          {(config?.eventDate || config?.location) && (
+            <div className="bg-white rounded-3xl p-4 border-2 border-[#EADBCE] shadow-xs text-xs space-y-1.5">
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#B45309] tracking-wider">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>ENTREGA DE PREMIOS & EVENTO</span>
+              </div>
+              <div className="font-black text-[#383028] text-xs sm:text-sm">
+                {config.location || "Manolo's Pizzas Tradicional"}
+              </div>
+              {config.address && (
+                <div className="text-[11px] text-[#6B6258] flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-[#D93636] shrink-0" />
+                  <span>{config.address}</span>
+                </div>
+              )}
+              {config.eventDate && (
+                <div className="text-[11px] font-mono text-[#27864B] font-bold">
+                  📅 {config.eventDate} {config.eventTime ? `a las ${config.eventTime} hs` : ''}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Center: Chef Manolo Animation & Main CTA */}
         <div className="lg:col-span-5 flex flex-col items-center justify-center order-1 lg:order-2">
           <Chef
-            mood="greeting"
-            speech="¡Benvenuto a Manolo's! ¿Estás listo para preparar las mejores pizzas italianas?"
+            mood={effectiveStatus === 'pausado' ? 'worried' : 'greeting'}
+            speech={
+              effectiveStatus === 'pausado'
+                ? '¡Atención pizzeros! El torneo está en pausa técnica momentánea.'
+                : effectiveStatus === 'proximo'
+                ? `¡El campeonato comenzará el ${config?.startDate || 'pronto'}! ¡Preparate para competir!`
+                : effectiveStatus === 'finalizado'
+                ? '¡El campeonato ha finalizado! ¡Revisá las posiciones para conocer a los ganadores!'
+                : '¡Benvenuto a Manolo\'s! ¡Demostrá tu habilidad en la cocina y ganá la Super Cena!'
+            }
             size="xl"
           />
 
-          {/* Primary CTA Button: Verde Italiano con Texto Blanco */}
+          {/* Primary CTA Button: Verde Italiano */}
           <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: effectiveStatus === 'activo' ? 1.04 : 1 }}
+            whileTap={{ scale: effectiveStatus === 'activo' ? 0.95 : 1 }}
+            disabled={effectiveStatus !== 'activo'}
             onClick={() => {
               sound.playClick();
               onStartGame();
             }}
-            className="mt-6 w-full max-w-sm py-4 px-8 rounded-2xl bg-[#27864B] hover:bg-[#1e6b3c] text-white font-black text-xl sm:text-2xl uppercase tracking-wider shadow-md border-2 border-[#1e6b3c] flex items-center justify-center gap-3 cursor-pointer transition-all"
+            className={`mt-6 w-full max-w-sm py-4 px-8 rounded-2xl font-black text-xl sm:text-2xl uppercase tracking-wider shadow-md border-2 flex items-center justify-center gap-3 transition-all ${
+              effectiveStatus !== 'activo'
+                ? 'bg-stone-300 border-stone-400 text-stone-600 cursor-not-allowed opacity-80'
+                : 'bg-[#27864B] hover:bg-[#1e6b3c] text-white border-[#1e6b3c] cursor-pointer'
+            }`}
           >
-            <Play className="w-6 h-6 fill-white" />
-            <span>¡JUGAR AHORA!</span>
+            <Play className="w-6 h-6 fill-current" />
+            <span>
+              {effectiveStatus === 'pausado'
+                ? 'TORNEO EN PAUSA'
+                : effectiveStatus === 'proximo'
+                ? `INICIA ${config?.startDate || ''}`
+                : effectiveStatus === 'finalizado'
+                ? 'TORNEO FINALIZADO'
+                : '¡JUGAR AHORA!'}
+            </span>
           </motion.button>
 
-          {/* Secondary Buttons: Blanco con Bordes Verdes */}
+          {/* Secondary Buttons: Posiciones y Cómo Jugar */}
           <div className="mt-4 flex items-center gap-3 w-full max-w-sm">
             <button
               onClick={() => {
@@ -159,7 +330,7 @@ export default function Home({
           </div>
         </div>
 
-        {/* Right Column: High Score & 3 Levels Info */}
+        {/* Right Column: High Score & 3 Challenge Levels */}
         <div className="lg:col-span-3 order-3 space-y-4">
           {/* High Score Card */}
           <div className="bg-white rounded-3xl p-4 border-2 border-[#EADBCE] shadow-sm text-center">
@@ -172,7 +343,7 @@ export default function Home({
             <div className="text-[10px] text-[#6B6258] font-mono mt-0.5">PUNTOS RECORD</div>
           </div>
 
-          {/* 3 Levels Teaser Box */}
+          {/* 3 Challenge Levels Showcase */}
           <div className="bg-white rounded-3xl p-4 border-2 border-[#EADBCE] shadow-sm space-y-2">
             <div className="text-xs font-black uppercase text-[#27864B] tracking-wider">
               3 NIVELES DE DESAFÍO:
@@ -183,7 +354,7 @@ export default function Home({
               <span className="text-lg">🍳</span>
               <div>
                 <div className="font-bold text-[#27864B]">Nivel 1: Ayudante</div>
-                <div className="text-[10px] text-[#6B6258]">Pizzas clásicas y tiempo amplio</div>
+                <div className="text-[10px] text-[#6B6258]">Comandas clásicas de 3 ingredientes</div>
               </div>
             </div>
 
@@ -192,16 +363,16 @@ export default function Home({
               <span className="text-lg">🍕</span>
               <div>
                 <div className="font-bold text-[#92400E]">Nivel 2: Maestro Pizzero</div>
-                <div className="text-[10px] text-[#6B6258]">Pizzas mitad & mitad complejas</div>
+                <div className="text-[10px] text-[#6B6258]">Comandas gourmet y reflejos rápidos</div>
               </div>
             </div>
 
-            {/* Level 3: Rojo italiano suave */}
+            {/* Level 3: Nuevo juego de memoria */}
             <div className="flex items-center gap-2 p-2 rounded-xl bg-[#FBE4DF] border border-[#D93636]/40 text-xs">
-              <span className="text-lg">🏆</span>
+              <span className="text-lg">🧠</span>
               <div>
                 <div className="font-bold text-[#D93636]">Nivel 3: Gran Chef</div>
-                <div className="text-[10px] text-[#6B6258]">Velocidad extrema y penalizaciones</div>
+                <div className="text-[10px] text-[#6B6258]">Memoria y parejas de ingredientes</div>
               </div>
             </div>
           </div>
@@ -255,28 +426,28 @@ export default function Home({
               <div className="space-y-3.5 text-xs sm:text-sm text-[#383028]">
                 <div className="p-3 rounded-2xl bg-[#FFFDF5] border border-[#EADBCE]">
                   <div className="font-bold text-[#27864B] mb-1 flex items-center gap-1.5">
-                    <span>1.</span> Leé la comanda del cliente
+                    <span>1.</span> Nivel 1: Ayudante de Cocina
                   </div>
                   <p className="text-[#6B6258] text-xs">
-                    Cada cliente pide ingredientes específicos. En los niveles 2 y 3 deberás respetar la distribución por mitades (ej. Mitad Jamón y Mitad Cuatro Quesos).
+                    Leé la comanda y armá las pizzas clásicas de 3 ingredientes seleccionándolos de la bandeja antes de que se agote el tiempo.
                   </p>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-[#FFFDF5] border border-[#EADBCE]">
                   <div className="font-bold text-[#27864B] mb-1 flex items-center gap-1.5">
-                    <span>2.</span> Colocá los ingredientes sobre la pizza
+                    <span>2.</span> Nivel 2: Maestro Pizzero
                   </div>
                   <p className="text-[#6B6258] text-xs">
-                    Tocá los ingredientes de la bandeja. En los niveles avanzados usá los botones "Toda", "Mitad Izq" o "Mitad Der" para posicionarlos correctamente.
+                    Comandas gourmet de 4 ingredientes y minijuegos de agilidad visual con mayor cantidad de ingredientes en la mesada.
                   </p>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-[#FFFDF5] border border-[#EADBCE]">
-                  <div className="font-bold text-[#27864B] mb-1 flex items-center gap-1.5">
-                    <span>3.</span> Entregá al horno antes que termine el tiempo
+                  <div className="font-bold text-[#D93636] mb-1 flex items-center gap-1.5">
+                    <span>3.</span> Nivel 3: Memoria de Gran Chef
                   </div>
                   <p className="text-[#6B6258] text-xs">
-                    Presioná "ENTREGAR PEDIDO". Mientras más rápido y preciso seas, más puntos y bonificaciones de velocidad vas a acumular.
+                    ¡El gran desafío de memoria! Da vuelta las cartas boca abajo y encontrá todas las parejas de ingredientes italianos. Mientras más rápido lo hagas y menos falles, mayor será tu bonificación.
                   </p>
                 </div>
 
@@ -285,10 +456,10 @@ export default function Home({
                     SISTEMA DE PUNTOS:
                   </div>
                   <ul className="text-xs space-y-1 text-[#383028] font-mono">
-                    <li>• Ingrediente correcto: <span className="text-[#27864B] font-bold">+100 pts</span></li>
+                    <li>• Acierto comanda: <span className="text-[#27864B] font-bold">+100 pts</span></li>
                     <li>• Pedido perfecto: <span className="text-[#B45309] font-bold">+500 pts</span></li>
-                    <li>• Bonificación de velocidad: <span className="text-[#27864B] font-bold">hasta +300 pts</span></li>
-                    <li>• Errores y penalizaciones: <span className="text-[#D93636] font-bold">-100 pts</span> (Nivel 3)</li>
+                    <li>• Pareja de memoria: <span className="text-[#27864B] font-bold">+200 pts</span></li>
+                    <li>• Bono velocidad Nivel 3: <span className="text-[#27864B] font-bold">10 pts por segundo</span></li>
                   </ul>
                 </div>
               </div>
@@ -296,11 +467,11 @@ export default function Home({
               <button
                 onClick={() => {
                   setShowHowToPlay(false);
-                  onStartGame();
+                  if (competitionStatus === 'activo') onStartGame();
                 }}
                 className="mt-5 w-full py-3.5 rounded-xl bg-[#27864B] hover:bg-[#1e6b3c] text-white font-black text-sm uppercase tracking-wider shadow-md cursor-pointer transition-all"
               >
-                ¡ENTENDIDO, QUIERO JUGAR!
+                ¡ENTENDIDO!
               </button>
             </motion.div>
           </motion.div>

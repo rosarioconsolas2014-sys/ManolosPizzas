@@ -26,7 +26,7 @@ export default function Footer() {
           <span className="hidden sm:inline text-[#EADBCE] font-bold">•</span>
 
           <a
-            href="tel:4312570106"
+            href="tel:3412570106"
             className="inline-flex items-center gap-1 text-[#27864B] hover:text-[#1e6b3c] font-semibold text-[11px] sm:text-xs transition-colors group cursor-pointer"
             title="Llamar a CARVI SOFT"
           >

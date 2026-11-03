@@ -11,6 +11,8 @@ import IngredientIcon from '../components/IngredientIcon.jsx';
 import Timer from '../components/Timer.jsx';
 import ScoreBoard from '../components/ScoreBoard.jsx';
 import LevelProgress from '../components/LevelProgress.jsx';
+import MemoryGame from '../components/MemoryGame.jsx';
+import { getGameConfig } from '../services/configService.js';
 import { ArrowRight, Check, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export default function Game({
@@ -39,6 +41,7 @@ export default function Game({
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [chefMood, setChefMood] = useState('cooking');
   const [chefSpeech, setChefSpeech] = useState('');
+  const [config, setConfig] = useState(null);
 
   const timerRef = useRef(null);
   const levelConfig = LEVELS.find(l => l.level === currentLevelNum) || LEVELS[0];
@@ -74,6 +77,9 @@ export default function Game({
 
   useEffect(() => {
     sound.startArcadeMusic();
+    getGameConfig().then(cfg => {
+      if (cfg) setConfig(cfg);
+    });
     startLevel(1);
 
     return () => {
@@ -208,10 +214,15 @@ export default function Game({
 
   const handleProceedNext = () => {
     sound.playClick();
-    if (currentLevelNum < 3) {
-      const nextLvl = currentLevelNum + 1;
-      setCurrentLevelNum(nextLvl);
-      startLevel(nextLvl);
+    if (currentLevelNum === 1) {
+      setCurrentLevelNum(2);
+      startLevel(2);
+    } else if (currentLevelNum === 2) {
+      // Avanzar al Nivel 3: Memoria de Ingredientes
+      setShowLevelModal(false);
+      setIsTimerRunning(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+      setCurrentLevelNum(3);
     } else {
       sound.stopMusic();
       const finalTotalScore = (levelScores[1] || 0) + (levelScores[2] || 0) + (levelEvaluation?.totalScore || 0);
@@ -227,6 +238,43 @@ export default function Game({
       });
     }
   };
+
+  const handleCompleteMemoryLevel3 = (memResult) => {
+    sound.stopMusic();
+    const l1 = levelScores[1] || 0;
+    const l2 = levelScores[2] || 0;
+    const l3 = Number(memResult?.score) || 0;
+    const totalScore = l1 + l2 + l3;
+    const totalTime = totalTimeAccumulated + (Number(memResult?.timeSeconds) || 0);
+    const acc = Math.round(((l1 > 0 ? 100 : 70) + (l2 > 0 ? 100 : 70) + (memResult?.accuracy || 80)) / 3);
+
+    onCompleteGame({
+      level1Score: l1,
+      level2Score: l2,
+      level3Score: l3,
+      totalScore: totalScore,
+      totalTimeSeconds: totalTime,
+      accuracy: acc
+    });
+  };
+
+  // Si está en Nivel 3, renderizamos el juego de Memoria directamente
+  if (currentLevelNum === 3) {
+    return (
+      <div className="min-h-[calc(100dvh-60px)] flex flex-col justify-start px-2 sm:px-4 py-2 sm:py-4 max-w-4xl mx-auto w-full">
+        <MemoryGame
+          cardCount={config?.memoryCardCount || 12}
+          timeLimit={config?.level3Time || 40}
+          pointsPerMatch={config?.memoryPointsPerMatch || 200}
+          completionBonus={config?.memoryCompletionBonus || 500}
+          speedBonusPerSecond={config?.memorySpeedBonusPerSecond || 10}
+          errorPenalty={config?.memoryErrorPenalty || 20}
+          onComplete={handleCompleteMemoryLevel3}
+          onAbort={onAbortGame}
+        />
+      </div>
+    );
+  }
 
   const cumulativeTotal = (levelScores[1] || 0) + (levelScores[2] || 0) + (levelScores[3] || 0);
 

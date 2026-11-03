@@ -288,14 +288,72 @@ export const LEVELS = [
   }
 ];
 
-export const DEFAULT_CONFIG = {
-  monthlyPrizeName: 'CENA COMPLETA PARA 4 PERSONAS ',
-  monthlyPrizeDescription: 'El mejor pizzero del mes ganará una cena gourmet para 4 personas en Manolo\'s Pizzas, el delantal oficial bordado y 1 pizza grande gratis por mes durante un año.',
+export const DEFAULT_COMPETITION_CONFIG = {
+  // SETTINGS CENTRALIZADOS (settings/gameConfig)
+  adminPasscode: "MANOLO2026",
+  competitionEnabled: true,
+  competitionTitle: "Gran Campeonato Manolo's Pizzas 2026",
+  startDate: "2026-11-01",
+  startTime: "18:00",
+  endDate: "2026-11-30",
+  endTime: "23:59",
+  eventDate: "2026-12-05",
+  eventTime: "20:30",
+  eventLocation: "Manolo's Pizzas - Salón Pizzería Tradicional",
+  eventAddress: "Av. Pellegrini 1450, Rosario",
+  maxAttempts: 3,
+  unlimitedAttempts: false,
+  prizeTitle: "SUPER CENA PARA 4 PERSONAS",
+  prizeSubtitle: "Una cena gourmet completa para 4 personas con entradas artesanales, pizzas gigantes de la casa a elección, bebidas libres y postre.",
+  prizeImage: "",
+  prizeQuantity: 1,
+  eventDescription: "El torneo culinario oficial de Manolo's Pizzas. Atendé comandas a contrarreloj en 3 niveles de pura velocidad y memoria gastronómica.",
+
+  // Aliases y compatibilidad retroactiva
+  eventName: "Gran Campeonato Manolo's Pizzas 2026",
+  publicTitle: "¡Demuestra quién es el Rey de la Pizza!",
+  description: "El torneo culinario oficial de Manolo's Pizzas. Atendé comandas a contrarreloj en 3 niveles de pura velocidad y memoria gastronómica.",
+  location: "Manolo's Pizzas - Salón Pizzería Tradicional",
+  address: "Av. Pellegrini 1450, Rosario",
+  extraInfo: "Entrada libre y gratuita para participantes y familias. Degustación de pizzas napolitanas al corte y entrega de trofeo.",
+  bannerUrl: "",
+  status: "activo", // 'proximo' | 'activo' | 'pausado' | 'finalizado'
+
+  prizeName: "SUPER CENA PARA 4 PERSONAS",
+  prizeDescription: "Una cena gourmet completa para 4 personas con entradas artesanales, pizzas gigantes de la casa a elección, bebidas libres y postre.",
+  prizeImageUrl: "",
+  prizeValue: "Cena gourmet completa con bebidas y postre",
+  prizeDeliveryDate: "2026-12-05",
+  prizeConditions: "Ser mayor de 18 años o asistir acompañado. Válido durante 30 días tras la entrega.",
+  promoText: "¡Jugá gratis, alcanzá la cima de la tabla del mes y llevate una Super Cena para 4 personas!",
+
+  competitionMonth: 11,
+  competitionYear: 2026,
+  registrationsOpen: true,
+  level1Time: 45,
+  level2Time: 35,
+  level3Time: 40,
+  podiumWinnersCount: 3,
+  tieBreakerRule: "time",
+  rankingPublic: true,
+
+  // Configuración de Juegos (Nivel 3 Memoria)
+  memoryCardCount: 12,
+  memoryPointsPerMatch: 200,
+  memoryCompletionBonus: 500,
+  memorySpeedBonusPerSecond: 10,
+  memoryErrorPenalty: 20,
+
+  // Compatibilidad legacy
+  monthlyPrizeName: "SUPER CENA PARA 4 PERSONAS",
+  monthlyPrizeDescription: "Una cena gourmet completa para 4 personas con entradas artesanales, pizzas gigantes de la casa a elección, bebidas libres y postre.",
   maxAttemptsPerPlayer: 3,
   gameActive: true,
   currentMonth: getCurrentMonthString(),
-  adminSecretPin: 'manolo123'
+  adminSecretPin: 'MANOLO2026'
 };
+
+export const DEFAULT_CONFIG = DEFAULT_COMPETITION_CONFIG;
 
 export function getCurrentMonthString() {
   const now = new Date();
@@ -316,3 +374,14 @@ export function formatMonthName(monthStr) {
   const year = parts[0];
   return `${monthNames[monthIdx] || parts[1]} ${year}`;
 }
+
+/**
+ * Enmascara el DNI para vistas públicas (ej: ***1234)
+ */
+export function maskDni(dni) {
+  if (!dni) return '***';
+  const s = String(dni).trim();
+  if (s.length <= 4) return '***' + s;
+  return '***' + s.slice(-4);
+}
+

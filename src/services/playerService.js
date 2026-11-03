@@ -106,7 +106,8 @@ export async function getAllParticipants() {
         dni: d.dni || docSnap.id,
         fechaRegistro: d.fechaRegistro || d.createdAt,
         totalAttempts: Number(d.totalAttempts ?? d.intentos) || 0,
-        lastAttemptAt: d.lastAttemptAt
+        lastAttemptAt: d.lastAttemptAt,
+        blocked: Boolean(d.blocked)
       });
     });
     if (list.length > 0) return list;
@@ -117,3 +118,43 @@ export async function getAllParticipants() {
   const localMap = getLocalPlayers();
   return Object.values(localMap);
 }
+
+/**
+ * Bloquea o desbloquea a un participante
+ */
+export async function toggleBlockParticipant(dni, blockedStatus) {
+  const cleanDni = String(dni).trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  try {
+    const docRef = doc(db, 'players', cleanDni);
+    await setDoc(docRef, { blocked: blockedStatus }, { merge: true });
+  } catch (e) {
+    console.warn('toggleBlockParticipant notice:', e?.message);
+  }
+
+  const localMap = getLocalPlayers();
+  if (localMap[cleanDni]) {
+    localMap[cleanDni].blocked = blockedStatus;
+    localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(localMap));
+  }
+}
+
+/**
+ * Reinicia el contador de intentos de un participante
+ */
+export async function resetParticipantAttempts(dni) {
+  const cleanDni = String(dni).trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  try {
+    const docRef = doc(db, 'players', cleanDni);
+    await setDoc(docRef, { totalAttempts: 0, intentos: 0 }, { merge: true });
+  } catch (e) {
+    console.warn('resetParticipantAttempts notice:', e?.message);
+  }
+
+  const localMap = getLocalPlayers();
+  if (localMap[cleanDni]) {
+    localMap[cleanDni].totalAttempts = 0;
+    localMap[cleanDni].intentos = 0;
+    localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(localMap));
+  }
+}
+
