@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "rosarioconsolas2014@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidPlayer(data) {
+      return data.nombre is string && data.nombre.size() >= 2 && data.nombre.size() <= 100 &&
+        data.dni is string && data.dni.size() >= 4 && data.dni.size() <= 20;
+    }
+
+    function isValidGameResult(data) {
+      return data.playerId is string && data.playerId.size() >= 4 && data.playerId.size() <= 30 &&
+        data.nombre is string && data.nombre.size() >= 2 && data.nombre.size() <= 100 &&
+        data.dni is string && data.dni.size() >= 4 && data.dni.size() <= 20 &&
+        data.nivel1 is number && data.nivel1 >= 0 &&
+        data.nivel2 is number && data.nivel2 >= 0 &&
+        data.nivel3 is number && data.nivel3 >= 0 &&
+        data.puntajeTotal is number && data.puntajeTotal >= 0 &&
+        data.tiempoTotal is number && data.tiempoTotal >= 0 &&
+        data.mes is string && data.mes.size() <= 10 &&
+        data.anio is number && data.anio >= 2024;
+    }
+
+    function isValidMonthlyRanking(data) {
+      return data.playerId is string && data.playerId.size() >= 4 && data.playerId.size() <= 30 &&
+        data.nombre is string && data.nombre.size() >= 2 && data.nombre.size() <= 100 &&
+        data.puntaje is number && data.puntaje >= 0 &&
+        data.mes is string && data.mes.size() <= 10 &&
+        data.anio is number && data.anio >= 2024;
+    }
+
+    function isValidSettings(data) {
+      return data.monthlyPrizeName is string && data.monthlyPrizeName.size() <= 200 &&
+        data.monthlyPrizeDescription is string && data.monthlyPrizeDescription.size() <= 1000 &&
+        data.maxAttemptsPerPlayer is number && data.maxAttemptsPerPlayer >= 1 &&
+        data.gameActive is bool &&
+        data.currentMonth is string && data.currentMonth.size() <= 10;
+    }
+
+    // Colección: players (Participantes)
+    match /players/{playerId} {
+      allow read: if true;
+      allow create: if isValidId(playerId) && isValidPlayer(incoming());
+      allow update: if isValidId(playerId) && isValidPlayer(incoming()) &&
+        (isAdmin() || incoming().diff(existing()).affectedKeys().hasOnly(['totalAttempts', 'intentos', 'lastAttemptAt', 'nombre', 'fullName']));
+      allow delete: if isAdmin();
+    }
+
+    // Colección: gameResults (Partidas y puntajes por nivel)
+    match /gameResults/{resultId} {
+      allow read: if true;
+      allow create: if isValidId(resultId) && isValidGameResult(incoming());
+      // Los participantes no pueden modificar ni falsear partidas anteriores
+      allow update, delete: if isAdmin();
+    }
+
+    // Colección: monthlyRanking (Ranking consolidado mensual)
+    match /monthlyRanking/{rankingId} {
+      allow read: if true;
+      allow create: if isValidId(rankingId) && isValidMonthlyRanking(incoming());
+      allow update: if isValidId(rankingId) && isValidMonthlyRanking(incoming()) &&
+        (isAdmin() || incoming().puntaje >= existing().puntaje);
+      allow delete: if isAdmin();
+    }
+
+    // Configuración global del torneo y premios
+    match /config/{configId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidSettings(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Registro de administradores autorizados
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

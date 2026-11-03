@@ -1,0 +1,6 @@
+{
+  "name": "Manolo's Pizzas – The Pizza Challenge",
+  "description": "Videojuego arcade interactivo de pizzería con 3 niveles de dificultad, sistema de comandas, puntajes y ranking mensual.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

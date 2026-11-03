@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --it-green: #27864B;
+    --it-green-soft: #DCEFE1;
+    --it-cream: #FFFDF5;
+    --it-red: #D93636;
+    --it-red-soft: #FBE4DF;
+    --it-mozzarella: #F8D978;
+    --it-dough: #F3E5CC;
+    --it-gray: #6B6258;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    background-color: #FFFDF5;
+    color: #383028;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Italian Trattoria Subtle Gingham Checkered Pattern */
+.bg-trattoria-pattern {
+  background-color: #FFFDF5;
+  background-image: 
+    radial-gradient(#27864b 0.6px, transparent 0.6px), 
+    radial-gradient(#d93636 0.6px, #FFFDF5 0.6px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+  background-opacity: 0.05;
+}
+
+/* Light warm scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F3E5CC;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27864B;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1e6b3c;
+}

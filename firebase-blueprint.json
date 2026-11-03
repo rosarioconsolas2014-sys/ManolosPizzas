@@ -1,0 +1,184 @@
+{
+  "entities": {
+    "Player": {
+      "title": "Player",
+      "description": "Participante registrado identificado por su DNI para Manolo's Pizzas",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador único o DNI del jugador",
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "nombre": {
+          "type": "string",
+          "description": "Nombre y apellido completo del participante",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "dni": {
+          "type": "string",
+          "description": "Número de DNI del participante",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "fechaRegistro": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha y hora de registro inicial"
+        },
+        "totalAttempts": {
+          "type": "number",
+          "description": "Cantidad de partidas realizadas"
+        }
+      },
+      "required": ["nombre", "dni", "fechaRegistro"]
+    },
+    "GameResult": {
+      "title": "GameResult",
+      "description": "Resultado de partida completada en The Pizza Challenge",
+      "type": "object",
+      "properties": {
+        "playerId": {
+          "type": "string",
+          "description": "DNI o identificador del participante",
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "nombre": {
+          "type": "string",
+          "description": "Nombre del participante",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "dni": {
+          "type": "string",
+          "description": "DNI del participante",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "nivel1": {
+          "type": "number",
+          "description": "Puntaje obtenido en Nivel 1"
+        },
+        "nivel2": {
+          "type": "number",
+          "description": "Puntaje obtenido en Nivel 2"
+        },
+        "nivel3": {
+          "type": "number",
+          "description": "Puntaje obtenido en Nivel 3"
+        },
+        "puntajeTotal": {
+          "type": "number",
+          "description": "Suma total de puntajes"
+        },
+        "tiempoTotal": {
+          "type": "number",
+          "description": "Tiempo acumulado en segundos"
+        },
+        "fecha": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de juego"
+        },
+        "mes": {
+          "type": "string",
+          "description": "Código o mes de juego (ej. 2026-11)",
+          "maxLength": 10
+        },
+        "anio": {
+          "type": "number",
+          "description": "Año de la partida"
+        }
+      },
+      "required": ["playerId", "nombre", "dni", "nivel1", "nivel2", "nivel3", "puntajeTotal", "tiempoTotal", "fecha", "mes", "anio"]
+    },
+    "MonthlyRanking": {
+      "title": "MonthlyRanking",
+      "description": "Puntajes consolidados del ranking mensual de Manolo's Pizzas",
+      "type": "object",
+      "properties": {
+        "playerId": {
+          "type": "string",
+          "description": "DNI del jugador",
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "nombre": {
+          "type": "string",
+          "description": "Nombre del jugador",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "puntaje": {
+          "type": "number",
+          "description": "Mejor puntaje del mes"
+        },
+        "mes": {
+          "type": "string",
+          "description": "Mes en formato YYYY-MM",
+          "maxLength": 10
+        },
+        "anio": {
+          "type": "number",
+          "description": "Año correspondiente"
+        }
+      },
+      "required": ["playerId", "nombre", "puntaje", "mes", "anio"]
+    },
+    "GameSettings": {
+      "title": "GameSettings",
+      "description": "Configuración del torneo mensual y premios",
+      "type": "object",
+      "properties": {
+        "monthlyPrizeName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "monthlyPrizeDescription": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "maxAttemptsPerPlayer": {
+          "type": "number"
+        },
+        "gameActive": {
+          "type": "boolean"
+        },
+        "currentMonth": {
+          "type": "string",
+          "maxLength": 10
+        }
+      },
+      "required": ["monthlyPrizeName", "monthlyPrizeDescription", "maxAttemptsPerPlayer", "gameActive", "currentMonth"]
+    }
+  },
+  "firestore": {
+    "/players/{playerId}": {
+      "schema": {
+        "$ref": "#/entities/Player"
+      },
+      "description": "Colección de participantes identificados por DNI"
+    },
+    "/gameResults/{resultId}": {
+      "schema": {
+        "$ref": "#/entities/GameResult"
+      },
+      "description": "Colección de partidas guardadas con puntajes por nivel y totales"
+    },
+    "/monthlyRanking/{rankingId}": {
+      "schema": {
+        "$ref": "#/entities/MonthlyRanking"
+      },
+      "description": "Colección de ranking mensual con el mejor puntaje de cada jugador"
+    },
+    "/config/settings": {
+      "schema": {
+        "$ref": "#/entities/GameSettings"
+      },
+      "description": "Configuración de juego y premio del mes"
+    }
+  }
+}
